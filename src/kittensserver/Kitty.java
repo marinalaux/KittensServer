@@ -18,16 +18,19 @@ public class Kitty {
     public static final int height = 64;
     /** Largura do jogador */
     public static final int width = 64;
-    /** Indica movimentação do jogador */
-    private Map<String, Boolean> movement;
+    /** Indica mensagem do jogador */
+    private Map<String, Boolean> message;
     /** Nome do jogador */
     private String name;
+    /** Ícone do jogador */
+    private String icon;
     /** Retornos do servidor para o player */
     public PrintWriter out;
     
     public Kitty() {
-        movement = new HashMap<>();
+        message = new HashMap<>();
         position = new Point(0, 0);
+        icon = "right";
     }
     
     /**
@@ -77,27 +80,45 @@ public class Kitty {
     }
 
     /**
-     * Retorna os movimentos do jogador
+     * Retorna mensagem do jogador
      * 
      * @param chave
-     * @return Movimentos
+     * @return Mensagem
      */
-    public boolean getMovement(String chave) {
-        if (movement.get(chave) == null) {
+    public boolean getMessage(String chave) {
+        if (message.get(chave) == null) {
             return false;
         } else {
-            return movement.get(chave);
+            return message.get(chave);
         }
     }
 
     /**
-     * Define movimentação do jogador
+     * Define mensagem do jogador
      * 
      * @param chave
      * @param valor
      */
-    public void setMoviment(String chave, Boolean valor) {
-        this.movement.put(chave, valor);
+    public void setMessage(String chave, Boolean valor) {
+        this.message.put(chave, valor);
     }
-    
+
+    /**
+     * Retorna o ícone do jogador
+     * 
+     * @return Ícone
+     */
+    public String getIcon() {
+        return icon;
+    }
+
+    /**
+     * Define o ícone do jogador
+     * 
+     * @param icon 
+     */
+    public void setIcon(String icon) {
+        this.icon = icon;
+    }
+
 }
