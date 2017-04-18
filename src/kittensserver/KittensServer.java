@@ -1,12 +1,15 @@
 package kittensserver;
 
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Servidor Kittens
@@ -51,79 +54,87 @@ public class KittensServer implements Runnable {
         try {
             while (true) {
                 Thread.sleep(30);
-                for (int i = 0; i < kittens.size(); i++) {
-                    if (kittens.get(i).getMessage(MOV_RIGHT)) {
-                        kittens.get(i).setPosition(new Point(kittens.get(i).getX() + SPEED, kittens.get(i).getY()));
-                        if (collideWallX(kittens.get(i))) {
-                            kittens.get(i).setPosition(new Point(WINDOW_WIDTH - Kitty.width, kittens.get(i).getY()));
-                        }
-                        kittens.get(i).setIcon("right");
-                    }
-                    if (kittens.get(i).getMessage(MOV_LEFT)) {
-                        kittens.get(i).setPosition(new Point(kittens.get(i).getX() - SPEED, kittens.get(i).getY()));
-                        if (collideWallX(kittens.get(i))) {
-                            kittens.get(i).setPosition(new Point(0, kittens.get(i).getY()));
-                        }
-                        kittens.get(i).setIcon("left");
-                    }
-                    if (kittens.get(i).getMessage(MOV_DOWN)) {
-                        kittens.get(i).setPosition(new Point(kittens.get(i).getX(), kittens.get(i).getY() + SPEED));
-                        if (collideWallY(kittens.get(i))) {
-                            kittens.get(i).setPosition(new Point(kittens.get(i).getX(), WINDOW_HEIGHT - Kitty.height));
-                        }
-                        kittens.get(i).setIcon("down");
-                    }
-                    if (kittens.get(i).getMessage(MOV_UP)) {
-                        kittens.get(i).setPosition(new Point(kittens.get(i).getX(), kittens.get(i).getY() - SPEED));
-                        if (collideWallY(kittens.get(i))) {
-                            kittens.get(i).setPosition(new Point(kittens.get(i).getX(), 0));
-                        }
-                        kittens.get(i).setIcon("up");
-                    }
-                    if (kittens.get(i).getMessage(PET)) {
-                        for (int j = 0; j < kittens.size(); j++) {
-                            if (kittens.get(i) != kittens.get(j)) {
-                                if (isPetting(kittens.get(i), kittens.get(j))) {
-                                    kittens.get(j).setMessage("Pet", true);
-                                } else {
-                                    kittens.get(i).setMessage("Pet", false);
-                                }
+                synchronized (kittens) {
+                    for (int i = 0; i < kittens.size(); i++) {
+                        if (kittens.get(i).getMessage(MOV_RIGHT)) {
+                            kittens.get(i).setPosition(new Point(kittens.get(i).getX() + SPEED, kittens.get(i).getY()));
+                            if (collideWallX(kittens.get(i))) {
+                                kittens.get(i).setPosition(new Point(WINDOW_WIDTH - Kitty.width, kittens.get(i).getY()));
                             }
+                            kittens.get(i).setIcon("right");
                         }
-                    }
-                }
-                ArrayList<Kitty> exitedKittens = new ArrayList<>();
-                for (int i = 0; i < kittens.size(); i++) {
-                    for (int j = 0; j < kittens.size(); j++) {
-                        if (kittens.get(j).getMessage(NEW)) {
-                            if (i == j) {
-                                for (int k = 0; k < kittens.size(); k++) {
-                                    if (k != j) {
-                                        kittens.get(i).out.println(getMessageNew(kittens.get(k)));
-                                        kittens.get(i).out.println(getMessageMov(k, kittens.get(k)));
+                        if (kittens.get(i).getMessage(MOV_LEFT)) {
+                            kittens.get(i).setPosition(new Point(kittens.get(i).getX() - SPEED, kittens.get(i).getY()));
+                            if (collideWallX(kittens.get(i))) {
+                                kittens.get(i).setPosition(new Point(0, kittens.get(i).getY()));
+                            }
+                            kittens.get(i).setIcon("left");
+                        }
+                        if (kittens.get(i).getMessage(MOV_DOWN)) {
+                            kittens.get(i).setPosition(new Point(kittens.get(i).getX(), kittens.get(i).getY() + SPEED));
+                            if (collideWallY(kittens.get(i))) {
+                                kittens.get(i).setPosition(new Point(kittens.get(i).getX(), WINDOW_HEIGHT - Kitty.height));
+                            }
+                            kittens.get(i).setIcon("down");
+                        }
+                        if (kittens.get(i).getMessage(MOV_UP)) {
+                            kittens.get(i).setPosition(new Point(kittens.get(i).getX(), kittens.get(i).getY() - SPEED));
+                            if (collideWallY(kittens.get(i))) {
+                                kittens.get(i).setPosition(new Point(kittens.get(i).getX(), 0));
+                            }
+                            kittens.get(i).setIcon("up");
+                        }
+                        if (kittens.get(i).getMessage(PET)) {
+                            if (kittens.size() == 1) {
+                                kittens.get(i).setMessage("Pet", false);
+                            }
+                            for (int j = 0; j < kittens.size(); j++) {
+                                if (kittens.get(i) != kittens.get(j)) {
+                                    if (isPetting(kittens.get(i), kittens.get(j))) {
+                                        kittens.get(j).setMessage("Pet", true);
+                                    } else {
+                                        kittens.get(i).setMessage("Pet", false);
                                     }
                                 }
                             }
-                            kittens.get(i).out.println(getMessageNew(kittens.get(j)));
-                            kittens.get(i).out.println(getMessageMov(j, kittens.get(j)));
-                        }
-                        if (kittens.get(j).getMessage(MOV_RIGHT) || kittens.get(j).getMessage(MOV_LEFT)
-                                || kittens.get(j).getMessage(MOV_DOWN) || kittens.get(j).getMessage(MOV_UP)) {
-                            kittens.get(i).out.println(getMessageMov(j, kittens.get(j)));
-                        }
-                        if (kittens.get(j).getMessage(PET)) {
-                            kittens.get(i).out.println("PET_" + j);
-                        }
-                        if (kittens.get(j).getMessage(EXIT)) {
-                            kittens.get(i).out.println("EXI_" + j);
                         }
                     }
-                    kittens.get(i).setMessage(NEW, false);
-                    if (kittens.get(i).getMessage(EXIT)) {
-                        exitedKittens.add(kittens.get(i));
+                    ArrayList<Kitty> exitedKittens = new ArrayList<>();
+                    for (int i = 0; i < kittens.size(); i++) {
+                        for (int j = 0; j < kittens.size(); j++) {
+                            if (kittens.get(j).getMessage(NEW)) {
+                                if (i == j) {
+                                    for (int k = 0; k < kittens.size(); k++) {
+                                        if (k != j) {
+                                            kittens.get(i).out.println(getMessageNew(kittens.get(k)));
+                                            kittens.get(i).out.println(getMessageMov(k, kittens.get(k)));
+                                        }
+                                    }
+                                }
+                                kittens.get(i).out.println(getMessageNew(kittens.get(j)));
+                                kittens.get(i).out.println(getMessageMov(j, kittens.get(j)));
+                            }
+                            if (kittens.get(j).getMessage(MOV_RIGHT) || kittens.get(j).getMessage(MOV_LEFT)
+                                    || kittens.get(j).getMessage(MOV_DOWN) || kittens.get(j).getMessage(MOV_UP)) {
+                                kittens.get(i).out.println(getMessageMov(j, kittens.get(j)));
+                            }
+                            if (kittens.get(j).getMessage(PET)) {
+                                kittens.get(i).out.println("PET_" + j);
+                            }
+                            if (kittens.get(j).getMessage(EXIT)) {
+                                kittens.get(i).out.println("EXIT_" + j);
+                            }
+                        }
                     }
+                    for (int i = 0; i < kittens.size(); i++) {
+                        kittens.get(i).setMessage(NEW, false);
+                        kittens.get(i).setMessage(PET, false);
+                        if (kittens.get(i).getMessage(EXIT)) {
+                            exitedKittens.add(kittens.get(i));
+                        }
+                    }
+                    kittens.removeAll(exitedKittens);
                 }
-                kittens.removeAll(exitedKittens);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -138,7 +149,9 @@ public class KittensServer implements Runnable {
             kittens = new ArrayList<>();
             ServerSocket ss = new ServerSocket(8880);
             Thread threadSender = new Thread(this);
+            Thread checkingConnectionThread = new Thread(this::checkPlayersConnection);
             threadSender.start();
+            checkingConnectionThread.start();
 
             while (true) {
                 Socket s = ss.accept();
@@ -188,6 +201,9 @@ public class KittensServer implements Runnable {
                             if (command.equals("exiting")) {
                                 k.setMessage(EXIT, true);
                             }
+                            if (command.equals("imAlive")) {
+                                k.setTimestamp(System.currentTimeMillis());
+                            }
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -197,6 +213,28 @@ public class KittensServer implements Runnable {
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Verifica a conexão dos jogadores
+     */
+    private void checkPlayersConnection() {
+        ArrayList<Kitty> exitedKittens = new ArrayList<>();
+        while (true) {
+            try {
+                synchronized (kittens) {
+                    for (int i = 0; i < kittens.size(); i++) {
+                        if ((System.currentTimeMillis() - kittens.get(i).getTimestamp()) > 5000) {
+                            exitedKittens.add(kittens.get(i));
+                        }
+                    }
+                    kittens.removeAll(exitedKittens);
+                }
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
     
@@ -228,14 +266,9 @@ public class KittensServer implements Runnable {
      * @return Estão sobrepostos
      */
     private boolean isPetting(Kitty k1, Kitty k2) {
-        return ((k2.getX() >= k1.getX()) && (k2.getX() <= (k1.getX() + Kitty.width)) &&
-                (k2.getY() >= k1.getY()) && (k2.getY() <= (k1.getY() + Kitty.height)));
-        
-        
-//        return (position.y + size.height) >= c.getPlayer().getPosition().y &&
-//               (position.y + size.height) <= (c.getPlayer().getPosition().y + Player.getTamanho().height) &&
-//               (position.x + size.width) >= c.getPlayer().getPosition().x &&
-//               (position.x + size.width) <= (c.getPlayer().getPosition().x + Player.getTamanho().width);
+        Rectangle kitty1 = new Rectangle(k1.getX(), k1.getY(), Kitty.width, Kitty.height);
+        Rectangle kitty2 = new Rectangle(k2.getX(), k2.getY(), Kitty.width, Kitty.height);
+        return kitty1.intersects(kitty2);
     }
     
     /**

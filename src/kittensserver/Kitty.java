@@ -24,6 +24,8 @@ public class Kitty {
     private String name;
     /** Ícone do jogador */
     private String icon;
+    /** Timestamp da última mensagem de conexão ativa recebida */
+    private long timestamp;
     /** Retornos do servidor para o player */
     public PrintWriter out;
     
@@ -31,6 +33,7 @@ public class Kitty {
         message = new HashMap<>();
         position = new Point(0, 0);
         icon = "right";
+        timestamp = System.currentTimeMillis();
     }
     
     /**
@@ -121,4 +124,22 @@ public class Kitty {
         this.icon = icon;
     }
 
+    /**
+     * Retorna timestamp da última mensagem de conexão ativa recebida
+     * 
+     * @return Timestamp
+     */
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    /**
+     * Define o timestamp da última mensagem de conexão ativa recebida
+     * 
+     * @param timestamp 
+     */
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+    
 }
