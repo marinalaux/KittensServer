@@ -8,24 +8,18 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Servidor Kittens
  *
  * @author Marina
  */
-public class KittensServer implements Runnable {
+public class KittensServer implements Runnable, GameConstants {
 
     /** Jogadores */
     private ArrayList<Kitty> kittens;
     /** Velocidade do movimento */
     private static final int SPEED = 4;
-    /** Largura da janela do cliente */
-    private static final int WINDOW_WIDTH = 788;
-    /** Altura da janela do cliente */
-    private static final int WINDOW_HEIGHT = 560;
     /** Mensagem para movimento para direita */
     private static final String MOV_RIGHT = "Right";
     /** Mensagem para movimento para esquerda */
@@ -34,8 +28,10 @@ public class KittensServer implements Runnable {
     private static final String MOV_UP = "Up";
     /** Mensagem para movimento para baixo */
     private static final String MOV_DOWN = "Down";
-    /** Mensagem para carinho */
+    /** Mensagem para carinho feito */
     private static final String PET = "Pet";
+    /** Mensagem para carinho recebido */
+    private static final String PETTED = "Petted";
     /** Mensagem de jogador novo */
     private static final String NEW = "New";
     /** Mensagem de jogador que saiu */
@@ -55,11 +51,12 @@ public class KittensServer implements Runnable {
             while (true) {
                 Thread.sleep(30);
                 synchronized (kittens) {
+                    boolean pettedSomeone = false;
                     for (int i = 0; i < kittens.size(); i++) {
                         if (kittens.get(i).getMessage(MOV_RIGHT)) {
                             kittens.get(i).setPosition(new Point(kittens.get(i).getX() + SPEED, kittens.get(i).getY()));
                             if (collideWallX(kittens.get(i))) {
-                                kittens.get(i).setPosition(new Point(WINDOW_WIDTH - Kitty.width, kittens.get(i).getY()));
+                                kittens.get(i).setPosition(new Point(WINDOW_WIDTH - Kitty.WIDTH, kittens.get(i).getY()));
                             }
                             kittens.get(i).setIcon("right");
                         }
@@ -73,7 +70,7 @@ public class KittensServer implements Runnable {
                         if (kittens.get(i).getMessage(MOV_DOWN)) {
                             kittens.get(i).setPosition(new Point(kittens.get(i).getX(), kittens.get(i).getY() + SPEED));
                             if (collideWallY(kittens.get(i))) {
-                                kittens.get(i).setPosition(new Point(kittens.get(i).getX(), WINDOW_HEIGHT - Kitty.height));
+                                kittens.get(i).setPosition(new Point(kittens.get(i).getX(), WINDOW_HEIGHT - Kitty.HEIGHT));
                             }
                             kittens.get(i).setIcon("down");
                         }
@@ -86,16 +83,20 @@ public class KittensServer implements Runnable {
                         }
                         if (kittens.get(i).getMessage(PET)) {
                             if (kittens.size() == 1) {
-                                kittens.get(i).setMessage("Pet", false);
+                                kittens.get(i).setMessage(PET, false);
                             }
                             for (int j = 0; j < kittens.size(); j++) {
                                 if (kittens.get(i) != kittens.get(j)) {
                                     if (isPetting(kittens.get(i), kittens.get(j))) {
-                                        kittens.get(j).setMessage("Pet", true);
-                                    } else {
-                                        kittens.get(i).setMessage("Pet", false);
+                                        kittens.get(j).setMessage(PETTED, true);
+                                        pettedSomeone = true;
                                     }
                                 }
+                            }
+                            if (pettedSomeone) {
+                                kittens.get(i).setPetScore(kittens.get(i).getPetScore() + 1);
+                            } else {
+                                kittens.get(i).setMessage(PET, false);
                             }
                         }
                     }
@@ -106,29 +107,30 @@ public class KittensServer implements Runnable {
                                 if (i == j) {
                                     for (int k = 0; k < kittens.size(); k++) {
                                         if (k != j) {
-                                            kittens.get(i).out.println(getMessageNew(kittens.get(k)));
+                                            kittens.get(i).out.println(getMessageNew(kittens.get(k), false));
                                             kittens.get(i).out.println(getMessageMov(k, kittens.get(k)));
                                         }
                                     }
                                 }
-                                kittens.get(i).out.println(getMessageNew(kittens.get(j)));
+                                kittens.get(i).out.println(getMessageNew(kittens.get(j), i == j));
                                 kittens.get(i).out.println(getMessageMov(j, kittens.get(j)));
                             }
                             if (kittens.get(j).getMessage(MOV_RIGHT) || kittens.get(j).getMessage(MOV_LEFT)
                                     || kittens.get(j).getMessage(MOV_DOWN) || kittens.get(j).getMessage(MOV_UP)) {
                                 kittens.get(i).out.println(getMessageMov(j, kittens.get(j)));
                             }
-                            if (kittens.get(j).getMessage(PET)) {
-                                kittens.get(i).out.println("PET_" + j);
+                            if (kittens.get(j).getMessage(PET) || kittens.get(j).getMessage(PETTED)) {
+                                kittens.get(i).out.println(getMessagePet(j, kittens.get(j)));
                             }
                             if (kittens.get(j).getMessage(EXIT)) {
-                                kittens.get(i).out.println("EXIT_" + j);
+                                kittens.get(i).out.println(getMessageExit(j));
                             }
                         }
                     }
                     for (int i = 0; i < kittens.size(); i++) {
                         kittens.get(i).setMessage(NEW, false);
                         kittens.get(i).setMessage(PET, false);
+                        kittens.get(i).setMessage(PETTED, false);
                         if (kittens.get(i).getMessage(EXIT)) {
                             exitedKittens.add(kittens.get(i));
                         }
@@ -160,7 +162,6 @@ public class KittensServer implements Runnable {
                     try {
                         Kitty k = new Kitty();
                         kittens.add(k);
-                        k.setName("Player " + (kittens.size() - 1));
                         BufferedReader in = new BufferedReader(new InputStreamReader(s.getInputStream()));
                         k.out = new PrintWriter(s.getOutputStream(), true);
                         
@@ -245,7 +246,7 @@ public class KittensServer implements Runnable {
      * @return Colidiu
      */
     private boolean collideWallX(Kitty k) {
-        return (k.getX() + Kitty.width) >= WINDOW_WIDTH || k.getX() <= 0;
+        return (k.getX() + Kitty.WIDTH) >= WINDOW_WIDTH || k.getX() <= 0;
     }
     
     /**
@@ -255,7 +256,7 @@ public class KittensServer implements Runnable {
      * @return Colidiu
      */
     private boolean collideWallY(Kitty k) {
-        return (k.getY() + Kitty.height) >= WINDOW_HEIGHT || k.getY() <= 0;
+        return (k.getY() + Kitty.HEIGHT) >= WINDOW_HEIGHT || k.getY() <= 0;
     }
     
     /**
@@ -266,15 +267,15 @@ public class KittensServer implements Runnable {
      * @return Estão sobrepostos
      */
     private boolean isPetting(Kitty k1, Kitty k2) {
-        Rectangle kitty1 = new Rectangle(k1.getX(), k1.getY(), Kitty.width, Kitty.height);
-        Rectangle kitty2 = new Rectangle(k2.getX(), k2.getY(), Kitty.width, Kitty.height);
+        Rectangle kitty1 = new Rectangle(k1.getX(), k1.getY(), Kitty.WIDTH, Kitty.HEIGHT);
+        Rectangle kitty2 = new Rectangle(k2.getX(), k2.getY(), Kitty.WIDTH, Kitty.HEIGHT);
         return kitty1.intersects(kitty2);
     }
     
     /**
      * Monta mensagem de movimento do jogador
      * 
-     * @param i
+     * @param j
      * @param k
      * @return Mensagem de movimento
      */
@@ -286,9 +287,32 @@ public class KittensServer implements Runnable {
      * Monta mensagem de novo jogador
      * 
      * @param k
-     * @return 
+     * @param you
+     * @return Mensagem de novo jogador
      */
-    private String getMessageNew(Kitty k) {
-        return "NEW_" + k.getName();
+    private String getMessageNew(Kitty k, boolean you) {
+        return "NEW_" + k.getColor() + "_" + you + "_" + k.getPetScore();
     }
+    
+    /**
+     * Monta mensagem de carinho em jogador
+     * 
+     * @param j
+     * @param k
+     * @return Mensagem de carinho
+     */
+    private String getMessagePet(int j, Kitty k) {
+        return "PET_" + j + "_" + k.getPetScore();
+    }
+    
+    /**
+     * Monta mensagem de saída de jogador
+     * 
+     * @param j
+     * @return Mensagem de saída
+     */
+    private String getMessageExit(int j) {
+        return "EXIT_" + j;
+    }
+    
 }

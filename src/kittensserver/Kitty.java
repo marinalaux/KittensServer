@@ -7,57 +7,62 @@ import java.util.Map;
 
 /**
  * Gatinho
- * 
+ *
  * @author Marina
  */
-public class Kitty {
-    
+public class Kitty implements GameConstants {
+
     /** Posição do jogador na tela */
     private Point position;
     /** Altura do jogador */
-    public static final int height = 64;
+    public static final int HEIGHT = 64;
     /** Largura do jogador */
-    public static final int width = 64;
+    public static final int WIDTH = 64;
     /** Indica mensagem do jogador */
     private Map<String, Boolean> message;
-    /** Nome do jogador */
-    private String name;
     /** Ícone do jogador */
     private String icon;
     /** Timestamp da última mensagem de conexão ativa recebida */
     private long timestamp;
+    /** Contador de carinhos */
+    private int petScore;
+    /** Cor do jogador */
+    private final int color;
     /** Retornos do servidor para o player */
     public PrintWriter out;
-    
+
     public Kitty() {
         message = new HashMap<>();
-        position = new Point(0, 0);
+        position = new Point((int) (Math.random() * (WINDOW_WIDTH - WIDTH)),
+                (int) (Math.random() * (WINDOW_HEIGHT - HEIGHT)));
         icon = "right";
         timestamp = System.currentTimeMillis();
+        petScore = 0;
+        color = (int) (Math.random() * 0xFFFFFF);
     }
-    
+
     /**
-     * Retorna a linha onde o jogador está
-     * 
-     * @return Linha
+     * Retorna a coluna onde o jogador está
+     *
+     * @return Coluna
      */
     public int getX() {
         return position.x;
     }
-    
+
     /**
-     * Retorna a coluna onde o jogador está
-     * 
-     * @return Coluna
+     * Retorna a linha onde o jogador está
+     *
+     * @return Linha
      */
     public int getY() {
         return position.y;
     }
-    
+
     /**
      * Define a posição do jogador
-     * 
-     * @param p 
+     *
+     * @param p
      */
     public void setPosition(Point p) {
         position.x = p.x;
@@ -65,26 +70,8 @@ public class Kitty {
     }
 
     /**
-     * Retorna o nome do jogador
-     * 
-     * @return Nome
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Define o nome do jogador
-     * 
-     * @param name 
-     */
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    /**
      * Retorna mensagem do jogador
-     * 
+     *
      * @param chave
      * @return Mensagem
      */
@@ -98,7 +85,7 @@ public class Kitty {
 
     /**
      * Define mensagem do jogador
-     * 
+     *
      * @param chave
      * @param valor
      */
@@ -108,7 +95,7 @@ public class Kitty {
 
     /**
      * Retorna o ícone do jogador
-     * 
+     *
      * @return Ícone
      */
     public String getIcon() {
@@ -117,8 +104,8 @@ public class Kitty {
 
     /**
      * Define o ícone do jogador
-     * 
-     * @param icon 
+     *
+     * @param icon
      */
     public void setIcon(String icon) {
         this.icon = icon;
@@ -126,7 +113,7 @@ public class Kitty {
 
     /**
      * Retorna timestamp da última mensagem de conexão ativa recebida
-     * 
+     *
      * @return Timestamp
      */
     public long getTimestamp() {
@@ -135,11 +122,38 @@ public class Kitty {
 
     /**
      * Define o timestamp da última mensagem de conexão ativa recebida
-     * 
-     * @param timestamp 
+     *
+     * @param timestamp
      */
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
-    
+
+    /**
+     * Retorna contador de carinho
+     *
+     * @return Contador
+     */
+    public int getPetScore() {
+        return petScore;
+    }
+
+    /**
+     * Define contador de carinho
+     *
+     * @param petScore
+     */
+    public void setPetScore(int petScore) {
+        this.petScore = petScore;
+    }
+
+    /**
+     * Retorna a cor do jogador
+     * 
+     * @return Cor
+     */
+    public int getColor() {
+        return color;
+    }
+
 }
